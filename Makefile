@@ -156,6 +156,9 @@ _forktest: forktest.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _forktest forktest.o ulib.o usys.o
 	$(OBJDUMP) -S _forktest > forktest.asm
 
+_diff: user/diff.c $(ULIB)
+	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _diff user/diff.c ulib.o usys.o printf.o umalloc.o
+
 _tree: user/tree.c $(ULIB)
 	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _tree user/tree.c ulib.o usys.o printf.o umalloc.o
 
@@ -186,6 +189,7 @@ UPROGS=\
 	_zombie\
         _proccount\
         _tree\
+        _diff\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
