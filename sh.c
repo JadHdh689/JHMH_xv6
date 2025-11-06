@@ -4,6 +4,35 @@
 #include "user.h"
 #include "fcntl.h"
 
+
+int strncmp(const char *p, const char *q, uint n);
+
+#define MAX_HISTORY 20
+#define MAX_CMD_LEN 100
+
+#define MAX_HISTORY 20
+#define MAX_CMD_LEN 100
+
+char history[MAX_HISTORY][MAX_CMD_LEN];
+int history_count = 0;
+
+void add_history(char *cmd) {
+  if(cmd[0] == 0) return;
+  if(history_count < MAX_HISTORY) {
+    strcpy(history[history_count], cmd);
+    history_count++;
+  } else {
+    for(int i = 1; i < MAX_HISTORY; i++)
+      strcpy(history[i-1], history[i]);
+    strcpy(history[MAX_HISTORY-1], cmd);
+  }
+}
+
+void show_history(void) {
+  for(int i = 0; i < history_count; i++)
+    printf(1, "%d %s", i+1, history[i]);  // prints each stored command
+}
+
 // Parsed command representation
 #define EXEC  1
 #define REDIR 2
@@ -164,6 +193,13 @@ main(void)
         printf(2, "cannot cd %s\n", buf+3);
       continue;
     }
+
+    add_history(buf);
+    if(strncmp(buf, "history", 7) == 0){
+        show_history();
+        continue;
+    }
+
     if(fork1() == 0)
       runcmd(parsecmd(buf));
     wait();
