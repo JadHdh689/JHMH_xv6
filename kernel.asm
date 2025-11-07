@@ -7649,22 +7649,22 @@ myproc(void) {
 80103c71:	8b 5d 14             	mov    0x14(%ebp),%ebx
 80103c74:	8b 55 e4             	mov    -0x1c(%ebp),%edx
 80103c77:	85 db                	test   %ebx,%ebx
-80103c79:	0f 84 2c 01 00 00    	je     80103dab <clone+0x15b>
+80103c79:	0f 84 34 01 00 00    	je     80103db3 <clone+0x163>
 80103c7f:	89 55 e4             	mov    %edx,-0x1c(%ebp)
 80103c82:	f7 45 14 ff 0f 00 00 	testl  $0xfff,0x14(%ebp)
-80103c89:	0f 85 1c 01 00 00    	jne    80103dab <clone+0x15b>
+80103c89:	0f 85 24 01 00 00    	jne    80103db3 <clone+0x163>
   if((np = allocproc()) == 0)
 80103c8f:	e8 0c fb ff ff       	call   801037a0 <allocproc>
 80103c94:	89 c3                	mov    %eax,%ebx
 80103c96:	85 c0                	test   %eax,%eax
-80103c98:	0f 84 0d 01 00 00    	je     80103dab <clone+0x15b>
-  np->pgdir    = cur->pgdir;        // share address space
+80103c98:	0f 84 15 01 00 00    	je     80103db3 <clone+0x163>
+  np->pgdir    = cur->pgdir;
 80103c9e:	8b 55 e4             	mov    -0x1c(%ebp),%edx
 80103ca1:	8b 42 04             	mov    0x4(%edx),%eax
 80103ca4:	89 43 04             	mov    %eax,0x4(%ebx)
   np->sz       = cur->sz;
 80103ca7:	8b 02                	mov    (%edx),%eax
-  np->parent   = cur;               // parent waits via join()
+  np->parent   = cur;
 80103ca9:	89 53 14             	mov    %edx,0x14(%ebx)
   np->sz       = cur->sz;
 80103cac:	89 03                	mov    %eax,(%ebx)
@@ -7675,7 +7675,7 @@ myproc(void) {
   np->tmaster  = cur->isthread ? cur->tmaster : cur;
 80103cb7:	8b 4a 7c             	mov    0x7c(%edx),%ecx
 80103cba:	85 c9                	test   %ecx,%ecx
-80103cbc:	0f 85 de 00 00 00    	jne    80103da0 <clone+0x150>
+80103cbc:	0f 85 e6 00 00 00    	jne    80103da8 <clone+0x158>
 80103cc2:	89 83 80 00 00 00    	mov    %eax,0x80(%ebx)
   np->ustack   = stack;
 80103cc8:	8b 45 14             	mov    0x14(%ebp),%eax
@@ -7687,98 +7687,93 @@ myproc(void) {
   *np->tf = *cur->tf;
 80103cd9:	8b 72 18             	mov    0x18(%edx),%esi
 80103cdc:	f3 a5                	rep movsl %ds:(%esi),%es:(%edi)
-  sp -= 4; *(uint*)sp = (uint)arg2;
+  sp -= 4; *(uint*)sp = (uint)arg2;        // arg2
 80103cde:	8b 4d 14             	mov    0x14(%ebp),%ecx
-  sp -= 4; *(uint*)sp = (uint)arg1;
-80103ce1:	8b 7d 14             	mov    0x14(%ebp),%edi
   for(i = 0; i < NOFILE; i++)
-80103ce4:	31 f6                	xor    %esi,%esi
-  np->tf->eax = 0;                  // return 0 in the child
-80103ce6:	8b 43 18             	mov    0x18(%ebx),%eax
-  sp -= 4; *(uint*)sp = (uint)arg1;
-80103ce9:	8d 89 f4 0f 00 00    	lea    0xff4(%ecx),%ecx
-  np->tf->eax = 0;                  // return 0 in the child
-80103cef:	c7 40 1c 00 00 00 00 	movl   $0x0,0x1c(%eax)
-  sp -= 4; *(uint*)sp = 0xffffffff; // fake return address
-80103cf6:	8b 45 14             	mov    0x14(%ebp),%eax
-80103cf9:	c7 80 fc 0f 00 00 ff 	movl   $0xffffffff,0xffc(%eax)
-80103d00:	ff ff ff 
-  sp -= 4; *(uint*)sp = (uint)arg2;
-80103d03:	8b 45 10             	mov    0x10(%ebp),%eax
-80103d06:	89 41 04             	mov    %eax,0x4(%ecx)
-  sp -= 4; *(uint*)sp = (uint)arg1;
-80103d09:	8b 45 0c             	mov    0xc(%ebp),%eax
-80103d0c:	89 87 f4 0f 00 00    	mov    %eax,0xff4(%edi)
+80103ce1:	31 f6                	xor    %esi,%esi
+80103ce3:	89 d7                	mov    %edx,%edi
+  np->tf->eax = 0;
+80103ce5:	8b 43 18             	mov    0x18(%ebx),%eax
+80103ce8:	c7 40 1c 00 00 00 00 	movl   $0x0,0x1c(%eax)
+  sp -= 4; *(uint*)sp = (uint)arg2;        // arg2
+80103cef:	8b 45 10             	mov    0x10(%ebp),%eax
+80103cf2:	89 81 fc 0f 00 00    	mov    %eax,0xffc(%ecx)
+  sp -= 4; *(uint*)sp = (uint)arg1;        // arg1
+80103cf8:	8b 45 0c             	mov    0xc(%ebp),%eax
+80103cfb:	89 81 f8 0f 00 00    	mov    %eax,0xff8(%ecx)
+  sp -= 4; *(uint*)sp = 0xffffffff;        // fake return
+80103d01:	89 c8                	mov    %ecx,%eax
+80103d03:	8d 89 f4 0f 00 00    	lea    0xff4(%ecx),%ecx
+80103d09:	c7 80 f4 0f 00 00 ff 	movl   $0xffffffff,0xff4(%eax)
+80103d10:	ff ff ff 
   np->tf->esp = sp;
-80103d12:	8b 43 18             	mov    0x18(%ebx),%eax
-  for(i = 0; i < NOFILE; i++)
-80103d15:	89 d7                	mov    %edx,%edi
-  np->tf->esp = sp;
-80103d17:	89 48 44             	mov    %ecx,0x44(%eax)
+80103d13:	8b 43 18             	mov    0x18(%ebx),%eax
+80103d16:	89 48 44             	mov    %ecx,0x44(%eax)
   np->tf->eip = (uint)fn;
-80103d1a:	8b 4d 08             	mov    0x8(%ebp),%ecx
-80103d1d:	8b 43 18             	mov    0x18(%ebx),%eax
-80103d20:	89 48 38             	mov    %ecx,0x38(%eax)
+80103d19:	8b 4d 08             	mov    0x8(%ebp),%ecx
+80103d1c:	8b 43 18             	mov    0x18(%ebx),%eax
+80103d1f:	89 48 38             	mov    %ecx,0x38(%eax)
+  np->tf->ebp = 0;
+80103d22:	8b 43 18             	mov    0x18(%ebx),%eax
+80103d25:	c7 40 08 00 00 00 00 	movl   $0x0,0x8(%eax)
   for(i = 0; i < NOFILE; i++)
-80103d23:	2e 8d 74 26 00       	lea    %cs:0x0(%esi,%eiz,1),%esi
+80103d2c:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
     if(cur->ofile[i])
-80103d28:	8b 44 b7 28          	mov    0x28(%edi,%esi,4),%eax
-80103d2c:	85 c0                	test   %eax,%eax
-80103d2e:	74 10                	je     80103d40 <clone+0xf0>
+80103d30:	8b 44 b7 28          	mov    0x28(%edi,%esi,4),%eax
+80103d34:	85 c0                	test   %eax,%eax
+80103d36:	74 10                	je     80103d48 <clone+0xf8>
       np->ofile[i] = filedup(cur->ofile[i]);
-80103d30:	83 ec 0c             	sub    $0xc,%esp
-80103d33:	50                   	push   %eax
-80103d34:	e8 87 d1 ff ff       	call   80100ec0 <filedup>
-80103d39:	83 c4 10             	add    $0x10,%esp
-80103d3c:	89 44 b3 28          	mov    %eax,0x28(%ebx,%esi,4)
+80103d38:	83 ec 0c             	sub    $0xc,%esp
+80103d3b:	50                   	push   %eax
+80103d3c:	e8 7f d1 ff ff       	call   80100ec0 <filedup>
+80103d41:	83 c4 10             	add    $0x10,%esp
+80103d44:	89 44 b3 28          	mov    %eax,0x28(%ebx,%esi,4)
   for(i = 0; i < NOFILE; i++)
-80103d40:	83 c6 01             	add    $0x1,%esi
-80103d43:	83 fe 10             	cmp    $0x10,%esi
-80103d46:	75 e0                	jne    80103d28 <clone+0xd8>
+80103d48:	83 c6 01             	add    $0x1,%esi
+80103d4b:	83 fe 10             	cmp    $0x10,%esi
+80103d4e:	75 e0                	jne    80103d30 <clone+0xe0>
   np->cwd = idup(cur->cwd);
-80103d48:	83 ec 0c             	sub    $0xc,%esp
-80103d4b:	ff 77 68             	push   0x68(%edi)
-80103d4e:	89 7d e4             	mov    %edi,-0x1c(%ebp)
-80103d51:	e8 1a da ff ff       	call   80101770 <idup>
+80103d50:	83 ec 0c             	sub    $0xc,%esp
+80103d53:	ff 77 68             	push   0x68(%edi)
+80103d56:	89 7d e4             	mov    %edi,-0x1c(%ebp)
+80103d59:	e8 12 da ff ff       	call   80101770 <idup>
   safestrcpy(np->name, cur->name, sizeof(np->name));
-80103d56:	83 c4 0c             	add    $0xc,%esp
+80103d5e:	83 c4 0c             	add    $0xc,%esp
   np->cwd = idup(cur->cwd);
-80103d59:	89 43 68             	mov    %eax,0x68(%ebx)
+80103d61:	89 43 68             	mov    %eax,0x68(%ebx)
   safestrcpy(np->name, cur->name, sizeof(np->name));
-80103d5c:	8d 43 6c             	lea    0x6c(%ebx),%eax
-80103d5f:	6a 10                	push   $0x10
-80103d61:	8b 55 e4             	mov    -0x1c(%ebp),%edx
-80103d64:	83 c2 6c             	add    $0x6c,%edx
-80103d67:	52                   	push   %edx
-80103d68:	50                   	push   %eax
-80103d69:	e8 72 0e 00 00       	call   80104be0 <safestrcpy>
+80103d64:	8d 43 6c             	lea    0x6c(%ebx),%eax
+80103d67:	6a 10                	push   $0x10
+80103d69:	8b 55 e4             	mov    -0x1c(%ebp),%edx
+80103d6c:	83 c2 6c             	add    $0x6c,%edx
+80103d6f:	52                   	push   %edx
+80103d70:	50                   	push   %eax
+80103d71:	e8 6a 0e 00 00       	call   80104be0 <safestrcpy>
   acquire(&ptable.lock);
-80103d6e:	c7 04 24 20 1d 11 80 	movl   $0x80111d20,(%esp)
-80103d75:	e8 b6 0b 00 00       	call   80104930 <acquire>
+80103d76:	c7 04 24 20 1d 11 80 	movl   $0x80111d20,(%esp)
+80103d7d:	e8 ae 0b 00 00       	call   80104930 <acquire>
   np->state = RUNNABLE;
-80103d7a:	c7 43 0c 03 00 00 00 	movl   $0x3,0xc(%ebx)
+80103d82:	c7 43 0c 03 00 00 00 	movl   $0x3,0xc(%ebx)
   release(&ptable.lock);
-80103d81:	c7 04 24 20 1d 11 80 	movl   $0x80111d20,(%esp)
-80103d88:	e8 43 0b 00 00       	call   801048d0 <release>
+80103d89:	c7 04 24 20 1d 11 80 	movl   $0x80111d20,(%esp)
+80103d90:	e8 3b 0b 00 00       	call   801048d0 <release>
   return np->pid;
-80103d8d:	8b 43 10             	mov    0x10(%ebx),%eax
-80103d90:	83 c4 10             	add    $0x10,%esp
+80103d95:	8b 43 10             	mov    0x10(%ebx),%eax
+80103d98:	83 c4 10             	add    $0x10,%esp
 }
-80103d93:	8d 65 f4             	lea    -0xc(%ebp),%esp
-80103d96:	5b                   	pop    %ebx
-80103d97:	5e                   	pop    %esi
-80103d98:	5f                   	pop    %edi
-80103d99:	5d                   	pop    %ebp
-80103d9a:	c3                   	ret
-80103d9b:	2e 8d 74 26 00       	lea    %cs:0x0(%esi,%eiz,1),%esi
+80103d9b:	8d 65 f4             	lea    -0xc(%ebp),%esp
+80103d9e:	5b                   	pop    %ebx
+80103d9f:	5e                   	pop    %esi
+80103da0:	5f                   	pop    %edi
+80103da1:	5d                   	pop    %ebp
+80103da2:	c3                   	ret
+80103da3:	2e 8d 74 26 00       	lea    %cs:0x0(%esi,%eiz,1),%esi
   np->tmaster  = cur->isthread ? cur->tmaster : cur;
-80103da0:	8b 82 80 00 00 00    	mov    0x80(%edx),%eax
-80103da6:	e9 17 ff ff ff       	jmp    80103cc2 <clone+0x72>
+80103da8:	8b 82 80 00 00 00    	mov    0x80(%edx),%eax
+80103dae:	e9 0f ff ff ff       	jmp    80103cc2 <clone+0x72>
     return -1;
-80103dab:	b8 ff ff ff ff       	mov    $0xffffffff,%eax
-80103db0:	eb e1                	jmp    80103d93 <clone+0x143>
-80103db2:	2e 8d b4 26 00 00 00 	lea    %cs:0x0(%esi,%eiz,1),%esi
-80103db9:	00 
+80103db3:	b8 ff ff ff ff       	mov    $0xffffffff,%eax
+80103db8:	eb e1                	jmp    80103d9b <clone+0x14b>
 80103dba:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
 
 80103dc0 <scheduler>:

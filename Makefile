@@ -173,6 +173,11 @@ _t_thread_basic: user/t_thread_basic.c ulib.o usys.o printf.o umalloc.o uthread.
 	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _t_thread_basic user/t_thread_basic.c \
 		ulib.o usys.o printf.o umalloc.o uthread.o ulock.o
 
+# Build the showcase test (user/t_thread_showcase.c)
+_t_thread_showcase: user/t_thread_showcase.c ulib.o usys.o printf.o umalloc.o uthread.o ulock.o
+	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _t_thread_showcase user/t_thread_showcase.c \
+		ulib.o usys.o printf.o umalloc.o uthread.o ulock.o
+
 
 mkfs: mkfs.c fs.h
 	gcc  -Wall -o mkfs mkfs.c
@@ -202,7 +207,8 @@ UPROGS=\
         _proccount\
         _tree\
         _diff\
-        	_t_thread_basic
+        	_t_thread_basic\
+            _t_thread_showcase
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

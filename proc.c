@@ -223,35 +223,31 @@ clone(void (*fn)(void*,void*), void *arg1, void *arg2, void *stack)
   uint sp;
   int i;
 
-  // require page-aligned user stack
   if(stack == 0 || ((uint)stack % PGSIZE) != 0)
     return -1;
 
   if((np = allocproc()) == 0)
     return -1;
 
-  // share address space and metadata
-  np->pgdir    = cur->pgdir;        // share address space
+  np->pgdir    = cur->pgdir;
   np->sz       = cur->sz;
-  np->parent   = cur;               // parent waits via join()
+  np->parent   = cur;
   np->isthread = 1;
   np->tmaster  = cur->isthread ? cur->tmaster : cur;
   np->ustack   = stack;
 
-  // copy trapframe and set thread entry state
   *np->tf = *cur->tf;
-  np->tf->eax = 0;                  // return 0 in the child
+  np->tf->eax = 0;
 
-  // build user stack: [arg1][arg2][fake_ret]
+  // Correct stack layout for cdecl fn(arg1,arg2)
   sp = (uint)stack + PGSIZE;
-  sp -= 4; *(uint*)sp = 0xffffffff; // fake return address
-  sp -= 4; *(uint*)sp = (uint)arg2;
-  sp -= 4; *(uint*)sp = (uint)arg1;
-
+  sp -= 4; *(uint*)sp = (uint)arg2;        // arg2
+  sp -= 4; *(uint*)sp = (uint)arg1;        // arg1
+  sp -= 4; *(uint*)sp = 0xffffffff;        // fake return
   np->tf->esp = sp;
   np->tf->eip = (uint)fn;
+  np->tf->ebp = 0;
 
-  // share open files and cwd (like fork)
   for(i = 0; i < NOFILE; i++)
     if(cur->ofile[i])
       np->ofile[i] = filedup(cur->ofile[i]);
@@ -264,6 +260,7 @@ clone(void (*fn)(void*,void*), void *arg1, void *arg2, void *stack)
 
   return np->pid;
 }
+
 
 // Exit current process or thread. Does not return.
 void
