@@ -187,5 +187,11 @@ void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
 
+
+// --- ADD to defs.h ---
+int  clone(void (*fn)(void*,void*), void *arg1, void *arg2, void *stack);
+int  join(void **stack);
+
+
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

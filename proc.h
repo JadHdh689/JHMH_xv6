@@ -49,6 +49,10 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  int  isthread;             // 1 if this proc is a kernel thread sharing pgdir
+  struct proc *tmaster;      // thread group leader (the original process)
+  void *ustack;              // base address of user stack page passed to clone()
+  int nthr;
 };
 
 // Process memory is laid out contiguously, low addresses first:
