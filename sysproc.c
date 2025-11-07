@@ -7,6 +7,8 @@
 #include "mmu.h"
 #include "proc.h"
 
+
+
 int
 sys_fork(void)
 {
@@ -94,4 +96,27 @@ sys_getprocs(void)
 {
 return getprocs();
 }
+
+int
+sys_clone(void)
+{
+  void (*fn)(void*,void*);
+  void *arg1, *arg2, *stack;
+
+  if (argptr(0, (void*)&fn,    sizeof(fn))    < 0) return -1;
+  if (argptr(1, (void*)&arg1,  sizeof(arg1))  < 0) return -1;
+  if (argptr(2, (void*)&arg2,  sizeof(arg2))  < 0) return -1;
+  if (argptr(3, (void*)&stack, sizeof(stack)) < 0) return -1;
+
+  return clone(fn, arg1, arg2, stack);
+}
+
+int
+sys_join(void)
+{
+  void **stack;
+  if (argptr(0, (void*)&stack, sizeof(stack)) < 0) return -1;
+  return join(stack);
+}
+
 

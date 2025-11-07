@@ -143,8 +143,12 @@ tags: $(OBJS) entryother.S _init
 vectors.S: vectors.pl
 	./vectors.pl > vectors.S
 
-ULIB = ulib.o usys.o printf.o umalloc.o
+ULIB = ulib.o usys.o printf.o umalloc.o \
+       uthread.o ulock.o
 
+uthread.o: user/uthread.c
+	$(CC) $(CFLAGS) -I. -nostdinc -c user/uthread.c -o uthread.o
+	
 _%: %.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $@ $^
 	$(OBJDUMP) -S $@ > $*.asm
@@ -159,8 +163,21 @@ _forktest: forktest.o $(ULIB)
 _diff: user/diff.c $(ULIB)
 	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _diff user/diff.c ulib.o usys.o printf.o umalloc.o
 
+ulock.o: user/ulock.c 
+	$(CC) $(CFLAGS) -I. -nostdinc -c user/ulock.c -o ulock.o
+
 _tree: user/tree.c $(ULIB)
 	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _tree user/tree.c ulib.o usys.o printf.o umalloc.o
+
+_t_thread_basic: user/t_thread_basic.c ulib.o usys.o printf.o umalloc.o uthread.o ulock.o
+	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _t_thread_basic user/t_thread_basic.c \
+		ulib.o usys.o printf.o umalloc.o uthread.o ulock.o
+
+# Build the showcase test (user/t_thread_showcase.c)
+_t_thread_showcase: user/t_thread_showcase.c ulib.o usys.o printf.o umalloc.o uthread.o ulock.o
+	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _t_thread_showcase user/t_thread_showcase.c \
+		ulib.o usys.o printf.o umalloc.o uthread.o ulock.o
+
 
 mkfs: mkfs.c fs.h
 	gcc  -Wall -o mkfs mkfs.c
@@ -190,6 +207,8 @@ UPROGS=\
         _proccount\
         _tree\
         _diff\
+        	_t_thread_basic\
+            _t_thread_showcase
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
