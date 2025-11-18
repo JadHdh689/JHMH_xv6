@@ -167,6 +167,9 @@ _diff: user/diff.c $(ULIB)
 ulock.o: user/ulock.c 
 	$(CC) $(CFLAGS) -I. -nostdinc -c user/ulock.c -o ulock.o
 
+_find: user/find.c $(ULIB)
+	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _find user/find.c ulib.o usys.o printf.o umalloc.o
+
 _tree: user/tree.c $(ULIB)
 	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _tree user/tree.c ulib.o usys.o printf.o umalloc.o
 
@@ -213,7 +216,8 @@ UPROGS=\
         _diff\
         _t_thread_basic\
         _t_thread_showcase\
-	_search
+	_search\
+	_find\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
