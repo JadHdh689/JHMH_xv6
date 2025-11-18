@@ -149,7 +149,7 @@ ULIB = ulib.o usys.o printf.o umalloc.o \
 
 uthread.o: user/uthread.c
 	$(CC) $(CFLAGS) -I. -nostdinc -c user/uthread.c -o uthread.o
-	
+
 _%: %.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $@ $^
 	$(OBJDUMP) -S $@ > $*.asm
@@ -169,6 +169,9 @@ ulock.o: user/ulock.c
 
 _tree: user/tree.c $(ULIB)
 	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _tree user/tree.c ulib.o usys.o printf.o umalloc.o
+
+_search: user/search.c $(ULIB)
+	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _search user/search.c ulib.o usys.o printf.o umalloc.o
 
 _t_thread_basic: user/t_thread_basic.c ulib.o usys.o printf.o umalloc.o uthread.o ulock.o
 	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _t_thread_basic user/t_thread_basic.c \
@@ -208,8 +211,9 @@ UPROGS=\
         _proccount\
         _tree\
         _diff\
-        	_t_thread_basic\
-            _t_thread_showcase
+        _t_thread_basic\
+        _t_thread_showcase\
+	_search
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
