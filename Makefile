@@ -170,6 +170,9 @@ ulock.o: user/ulock.c
 _find: user/find.c $(ULIB)
 	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _find user/find.c ulib.o usys.o printf.o umalloc.o
 
+_split: user/split.c ulib.o usys.o printf.o umalloc.o
+	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _split user/split.c ulib.o usys.o printf.o umalloc.o
+
 _tree: user/tree.c $(ULIB)
 	$(CC) $(CFLAGS) -I. -nostdlib -nostartfiles -o _tree user/tree.c ulib.o usys.o printf.o umalloc.o
 
@@ -218,6 +221,7 @@ UPROGS=\
         _t_thread_showcase\
 	_search\
 	_find\
+	_split
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
