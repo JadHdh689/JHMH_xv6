@@ -1,3 +1,10 @@
+// Number of priority levels for MLFQ scheduler
+#define NPRIO 3
+
+// How often (in global ticks) we boost all processes back to highest priority
+#define BOOST_INTERVAL 100
+
+
 // Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
@@ -53,6 +60,10 @@ struct proc {
   struct proc *tmaster;      // thread group leader (the original process)
   void *ustack;              // base address of user stack page passed to clone()
   int nthr;
+    // MLFQ scheduling fields
+  int priority;      // 0 = highest, NPRIO-1 = lowest
+  int ticks;         // ticks used at current priority level
+  int needResched;   // set to 1 when time slice is used up
 };
 
 // Process memory is laid out contiguously, low addresses first:

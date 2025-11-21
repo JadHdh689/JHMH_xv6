@@ -219,6 +219,9 @@ UPROGS=\
         _diff\
         _t_thread_basic\
         _t_thread_showcase\
+        _kthread_basic\
+		_kthread_sbrk\
+		_kthread_join_empty\
 	_search\
 	_find\
 	_split
