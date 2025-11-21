@@ -19,7 +19,7 @@ extern void forkret(void);
 extern void trapret(void);
 
 static void wakeup1(void *chan);
-
+extern uint ticks;  // global tick count from trap.c
 void
 pinit(void)
 {
@@ -84,6 +84,12 @@ found:
   p->isthread = 0;
   p->tmaster  = p;   // a fresh proc is its own master
   p->ustack   = 0;
+
+    // Initialize MLFQ scheduling fields
+  p->priority = 0;       // start at highest priority
+  p->ticks = 0;          // no ticks used yet
+  p->needResched = 0;    // not asking for reschedule yet
+  
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -169,10 +175,11 @@ fork(void)
   struct proc *np;
   struct proc *curproc = myproc();
 
+  // Allocate process.
   if((np = allocproc()) == 0)
     return -1;
 
-  // Copy address space
+  // Copy process state from parent.
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
     kfree(np->kstack);
     np->kstack = 0;
@@ -183,21 +190,18 @@ fork(void)
   np->parent = curproc;
   *np->tf = *curproc->tf;
 
+  // NEW LINE: inherit scheduling priority from parent
+  np->priority = curproc->priority;
+
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
 
-  // Inherit files and cwd
   for(i = 0; i < NOFILE; i++)
     if(curproc->ofile[i])
       np->ofile[i] = filedup(curproc->ofile[i]);
   np->cwd = idup(curproc->cwd);
 
-  safestrcpy(np->name, curproc->name, sizeof(np->name));
-
-  // This is a process (not a thread)
-  np->isthread = 0;
-  np->tmaster  = np;
-  np->ustack   = 0;
+  safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
   pid = np->pid;
 
@@ -406,33 +410,129 @@ join(void **stack)
   }
 }
 
-// Per-CPU scheduler
+// Per-CPU process scheduler.
+// Uses a simple 3-level MLFQ-like priority scheme.
+//
+// priority 0: highest, short time slice
+// priority 1: medium
+// priority 2: lowest, longest time slice
 void
 scheduler(void)
 {
-  struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
 
   for(;;){
+    // Enable interrupts on this processor.
     sti();
+
     acquire(&ptable.lock);
+
+    struct proc *p;
+    struct proc *best = 0;
+    int bestprio = NPRIO;   // higher than any valid priority
+
+    // Find the RUNNABLE process with the highest priority
+    // (i.e., smallest priority value).
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
 
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
+      if(p->priority < bestprio){
+        bestprio = p->priority;
+        best = p;
+      }
+    }
 
-      swtch(&(c->scheduler), p->context);
+    if(best != 0){
+      // We found a process to run.
+      c->proc = best;
+      switchuvm(best);
+
+      // Clear resched flag and start a new time slice.
+      best->needResched = 0;
+      best->ticks = 0;
+
+      best->state = RUNNING;
+
+      swtch(&c->scheduler, best->context);
       switchkvm();
 
+      // Process is done running for now.
+      // It should have changed its state before coming back.
       c->proc = 0;
     }
+
     release(&ptable.lock);
+    // Loop back and look for next process to run.
   }
 }
+
+
+
+
+
+
+
+// Called on each timer interrupt (from trap.c).
+// Updates the running process's tick count, enforces time slices,
+// and performs periodic priority boosting to avoid starvation.
+void
+schedulerTick(void)
+{
+  struct proc *p = myproc();
+
+  acquire(&ptable.lock);
+
+  // If there is a process running on this CPU, charge it one tick.
+  if(p != 0 && p->state == RUNNING){
+    p->ticks++;
+
+    // Determine time quantum based on priority.
+    int quantum;
+    if(p->priority == 0)
+      quantum = 1;   // highest priority: shortest time slice
+    else if(p->priority == 1)
+      quantum = 2;
+    else
+      quantum = 4;   // lowest priority: longest time slice
+
+    // If it used up its quantum, demote and ask for rescheduling.
+    if(p->ticks >= quantum){
+      p->ticks = 0;
+
+      // Demote if not already at lowest priority.
+      if(p->priority < NPRIO - 1)
+        p->priority++;
+
+      // Tell trap() that we should yield at the end of this tick.
+      p->needResched = 1;
+    }
+  }
+
+  // Global priority boosting every BOOST_INTERVAL ticks.
+  // (We only read 'ticks'; it is updated in trap.c under tickslock.)
+  if(ticks != 0 && ticks % BOOST_INTERVAL == 0){
+    struct proc *q;
+    for(q = ptable.proc; q < &ptable.proc[NPROC]; q++){
+      if(q->state != UNUSED){
+        q->priority = 0;   // move back to highest priority
+        q->ticks = 0;
+        // Do not touch needResched here; the process will
+        // be handled normally when it runs.
+      }
+    }
+  }
+
+  release(&ptable.lock);
+}
+
+
+
+
+
+
+
 
 // Enter scheduler. Must hold only ptable.lock and have changed proc->state.
 void
